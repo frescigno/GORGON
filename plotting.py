@@ -4,17 +4,14 @@
 List of all desired plottings for GP code
 
 Author: Federica Rescigno
-Version: 13-07-2023
-
-Adding batman for simulataneous photometric analysis
+Version: 25-01-2022
 """
 import matplotlib
 from matplotlib.colors import Normalize
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import numpy as np
-import scipy.interpolate
-import auxiliary_batman as aux
+import auxiliary as aux
 import matplotlib.ticker as plticker
 
 poster=False
@@ -281,7 +278,7 @@ def mixing_plot(iterations, numb_chains, hparam_chain, kernel_name, model_param_
     
 
 
-def corner_plot(hparam_chain, kernel_name, model_param_chain, model_name, batman_parameters=None, save_folder=None, savefilename="corner", errors=False):
+def corner_plot(hparam_chain, kernel_name, model_param_chain, model_name, save_folder=None, savefilename="corner", errors=False):
     '''
     Parameters
     ----------
@@ -299,13 +296,11 @@ def corner_plot(hparam_chain, kernel_name, model_param_chain, model_name, batman
         Name of the file to save the plot, by default Corner.
     '''
     
-    
     import corner
     
     
     hparam_names = aux.hparam_names(kernel_name)
     model_param_names = aux.model_param_names(model_name, SkCk=True)
-    batman_names = aux.batman_names()
     
     
     # Resizing of arrays: create 2d array, nrows=iteration*chians, ncols = nparam
@@ -341,21 +336,6 @@ def corner_plot(hparam_chain, kernel_name, model_param_chain, model_name, batman
                 modpar[numb][p] = model_param_chain[c][p][i]
                 numb += 1
     
-    if batman_parameters is not None:
-        bat = np.array(batman_parameters)
-        shapes3 = bat.shape
-        numb_chains3 = shapes3[0]
-        nparam3 = shapes3[1]
-        depth3 = shapes3[2]
-        
-        batpar = np.zeros((((depth3)*numb_chains3),nparam3))
-        for p in range(nparam3):
-            numb=0
-            for c in range(numb_chains3):
-                for i in range(depth3):
-                    batpar[numb][p] = batman_parameters[c][p][i]
-                    numb += 1
-    #batpar_names = ['rho_star', 'q1', 'q2', 'jitphot', 'P_0', 't0_0', 'ecc_0', 'omega_0', 'Rratio_0', 'i_0', 'P_1', 't0_1', 'ecc_1', 'omega_1', 'Rratio_1', 'i_1']
     
     
     
@@ -380,29 +360,6 @@ def corner_plot(hparam_chain, kernel_name, model_param_chain, model_name, batman
         plt.show()
     except ValueError:
         print("Inside: No dynamic range in model")
-    
-    
-    if batman_parameters is not None:
-        try:
-            # Corner plot of model parameters
-            fig = corner.corner(batpar, labels=batman_names, show_titles=True)
-            if save_folder is not None:
-                assert savefilename is not None, "You need to give both save_folder and savefilename to save the figure"
-                plt.savefig(str(save_folder)+"/"+str(savefilename)+"_batman"+".pdf")
-            plt.show()
-            
-            final_batparam_values = []
-            final_batparam_erru = []
-            final_batparam_errd = []
-            
-            for a in range(len(batman_parameters[0])):
-                errd, quantile, erru = corner.quantile(batman_parameters[:,a], [0.16,0.5,0.84])
-                final_batparam_values.append(quantile)
-                final_batparam_erru.append(erru)
-                final_batparam_errd.append(errd)
-            
-        except ValueError:
-            print("Inside: No dynamic range in model")
     
     # Full corner plot
     try:
@@ -458,10 +415,7 @@ def corner_plot(hparam_chain, kernel_name, model_param_chain, model_name, batman
     
     print("Parameter values after MCMC: ", final_param_values)
     if errors:
-        if batman_parameters is not None:
-            return final_param_values, final_param_erru, final_param_errd, final_batparam_values, final_batparam_erru, final_batparam_errd
-        else:
-            return final_param_values, final_param_erru, final_param_errd
+        return final_param_values, final_param_erru, final_param_errd
     else:
         return final_param_values
 
